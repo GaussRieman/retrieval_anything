@@ -81,10 +81,11 @@ _ = vector_store.add_documents(documents=all_splits)
 input_variables = ['context', 'question', 'messages']
 input_types = {}
 partial_variables = {}
-metadata = {'lc_hub_owner': 'rlm', 'lc_hub_repo': 'rag-prompt', 'lc_hub_commit_hash': '50442af133e61576e74536c6556cefe1fac147cad032f4377b60c436e6cdcb6e'}
-
 template = """
-You are an assistant for question-answering tasks. Use the following pieces of retrieved context and conversation history to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.
+You are an assistant for question-answering tasks. 
+Use the following pieces of retrieved context and conversation history to answer the question. 
+If you don't know the answer, just say that you don't know. 
+Keep the answer concise.
 
 Conversation History:
 {messages}
@@ -173,7 +174,7 @@ def stream_graph_updates(user_input: str):
 
     if last_event is not None:  # 如果有事件，则处理最后一个事件
         if "answer" in last_event:
-            print("Latest Answer: ", last_event["answer"])
+            print("Assistant: ", last_event["answer"])
         else:
             print("Last event does not contain 'answer'")
     else:
