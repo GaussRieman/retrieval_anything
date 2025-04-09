@@ -6,13 +6,26 @@ from langchain_core.prompts.chat import (
 )
 from langchain_openai import ChatOpenAI
 import base64
+from functools import partial
 
 def img_to_base64(img_path):
     with open(img_path, "rb") as f:
         img = f.read()
     return base64.b64encode(img).decode("utf-8")
 
-url = "/datadrive/codes/frank/langchains/retrieval_anything/data/wendu/5dc5cb10030117245509f4f563f0bc98.jpg"
+
+def construct_prompt(system_instruction: str, image_data: str, question: str, context: str = ""):
+    messages = [
+        SystemMessage(content=system_instruction),
+        HumanMessage(content=[
+            {"type": "text", "text": f"{question} {context}"}, 
+            {"type": "image_url", "image_url": {"url": image_data}}
+            ]),
+    ]
+    return messages
+
+
+url = "/datadrive/codes/frank/langchains/retrieval_anything/data/wendu/559e0cb750546455854e8c8d57aa1898.jpg"
 img_data = img_to_base64(url)
 img_data = f"data:image/png;base64,{img_data}"
 
@@ -38,6 +51,7 @@ q_tempreture = """
             """
             
 
+# Consturct the prompt directly
 messages = [
     SystemMessage(
         content="Help people with their tasks. You are a helpful assistant."
@@ -52,6 +66,16 @@ messages = [
         ],
     ),
 ]
+
 res = llm.invoke(messages)
 print("Raw response:", res)
 print("Response:", res.content)
+
+
+# Construct the prompt using partial function
+partial_prompt = partial(construct_prompt, system_instruction="Help people with their tasks. You are a helpful assistant.")
+msg1 = partial_prompt(image_data=img_data, question=q_tempreture)
+
+resp = llm.invoke(msg1)
+print("Raw response:", resp)
+
