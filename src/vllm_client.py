@@ -5,8 +5,8 @@ import json
 
 
 # Set OpenAI's API key and API base to use vLLM's API server.
-openai_api_key = "WHOSYOURDADY" #"QWENVLPRICE"
-openai_api_base = "http://117.50.186.193:8555/v1"
+openai_api_key = "QWENVLPRICE" #"QWENVLPRICE"
+openai_api_base = "http://117.50.186.193:8556/v1"
 
 client = OpenAI(
     api_key=openai_api_key,
@@ -55,10 +55,19 @@ q_volume = """
             3.The volume is usually expressed in milliliters (ml) or liters (L) or grams (g) or just a number
             4.Your answer should be in the format of {'volume': {volume_number}}
             """
+            
+q_store_closed = """
+            1.你会看到一张图片，图片上有一个商店的门口
+            2.你需要判断商店是否关闭
+            3.如果商店关闭，输出{'closed': True}
+            4.如果商店没有关闭，输出{'closed': False}
+            5.如果图片上没有商店，输出{'closed': None}
+            6.直接输出最终的结果Json，不要输出你的思考过程! 
+            """
 
-url = "../data/price/2096_a2ab91241fe25cc6dc9597a5d8f4bce_008489_067218_079821_088896.jpg"
+url = "/datadrive/codes/frank/langchains/retrieval_anything/data/186/302951b264a7dee9979681740cf96a9a.jpg"
 img = cv2.imread(url)
-img = cv2.resize(img, (600, 400))
+img = cv2.resize(img, (100, 50))
 img_b64 = base64.b64encode(cv2.imencode(".png", img)[1]).decode()
 img_b64 = f"data:image/png;base64,{img_b64}"
 
@@ -76,7 +85,7 @@ for i in range(1):
                                 "url": img_b64
                             },
                         },
-                        {"type": "text", "text": q_price_v2},
+                        {"type": "text", "text": q_store_closed},
                     ],
                 },
             ],
@@ -85,6 +94,3 @@ for i in range(1):
 print("Raw response:", chat_response)
 resp = chat_response.choices[0].message.content
 print("Chat response:", resp, type(resp))
-clean_resp = resp.strip("```json\n")
-json_res = json.loads(clean_resp)
-print("Json response:", json_res, type(json_res))

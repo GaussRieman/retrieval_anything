@@ -25,7 +25,7 @@ def construct_prompt(system_instruction: str, image_data: str, question: str, co
     return messages
 
 
-url = "/datadrive/codes/frank/langchains/retrieval_anything/data/wendu/559e0cb750546455854e8c8d57aa1898.jpg"
+url = "/datadrive/codes/frank/langchains/retrieval_anything/data/rag/344F22CE-6866-47E9-85D2-65C387975D82.jpg"
 img_data = img_to_base64(url)
 img_data = f"data:image/png;base64,{img_data}"
 
@@ -74,7 +74,8 @@ print("Response:", res.content)
 
 # Construct the prompt using partial function
 partial_prompt = partial(construct_prompt, system_instruction="Help people with their tasks. You are a helpful assistant.")
-msg1 = partial_prompt(image_data=img_data, question=q_tempreture)
+msg1 = partial_prompt(image_data=img_data, 
+                      question="你会看到一张冰柜图片，其中会有一些层，这些层是用隔板隔开的。请问最上面一层的百威啤酒的价格是多少？")
 
 resp = llm.invoke(msg1)
 print("Raw response:", resp)
