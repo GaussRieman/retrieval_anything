@@ -7,11 +7,19 @@ from langchain_core.prompts.chat import (
 from langchain_openai import ChatOpenAI
 import base64
 from functools import partial
+from openai import OpenAI
+import cv2
 
 def img_to_base64(img_path):
-    with open(img_path, "rb") as f:
-        img = f.read()
-    return base64.b64encode(img).decode("utf-8")
+    img = cv2.imread(img_path)
+    if max(img.shape) > 1000:
+        scale = 1000 / max(img.shape)
+        img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)))
+    print("Image shape:", img.shape)
+    # Convert the image to base64
+    _, img_encoded = cv2.imencode(".png", img)
+    img_b64 = base64.b64encode(img_encoded).decode()
+    return img_b64
 
 
 def construct_prompt(system_instruction: str, image_data: str, question: str, context: str = ""):
@@ -25,7 +33,7 @@ def construct_prompt(system_instruction: str, image_data: str, question: str, co
     return messages
 
 
-url = "/datadrive/codes/frank/langchains/retrieval_anything/data/rag/344F22CE-6866-47E9-85D2-65C387975D82.jpg"
+url = "/datadrive/codes/frank/langchains/retrieval_anything/data/price/fe6bedaacb3e42c1683260b23669b194.jpg"
 img_data = img_to_base64(url)
 img_data = f"data:image/png;base64,{img_data}"
 
@@ -40,6 +48,13 @@ llm = ChatOpenAI(
     max_tokens=1024,
     temperature=0,
 )
+
+client = OpenAI(
+    api_key=openai_api_key,
+    base_url=openai_api_base,
+)
+models = client.models.list()
+print("Models:", models)
 
 q_tempreture = """
             1.你需要提取图片上的温度数字,位于图片中黑色的显示屏上，数字是红色的，忽略非显示屏区域的文本
@@ -58,7 +73,7 @@ messages = [
     ),
     HumanMessage(
         content=[
-            {"type": "text", "text": q_tempreture},
+            {"type": "text", "text": "仔细看图，认真思考，最后回答: {'有氯雷他定片的促销物料: boolean}"},
             {
                 "type": "image_url",
                 "image_url": {"url": img_data},
@@ -73,10 +88,11 @@ print("Response:", res.content)
 
 
 # Construct the prompt using partial function
-partial_prompt = partial(construct_prompt, system_instruction="Help people with their tasks. You are a helpful assistant.")
-msg1 = partial_prompt(image_data=img_data, 
-                      question="你会看到一张冰柜图片，其中会有一些层，这些层是用隔板隔开的。请问最上面一层的百威啤酒的价格是多少？")
+# img_url = "https://f-api-test-ws.clobotics.cn/v/fe6a88e631e48e2301f27b583e3d8764.jpg"
+# partial_prompt = partial(construct_prompt, system_instruction="Help people with their tasks. You are a helpful assistant.")
+# msg1 = partial_prompt(image_data=img_data, 
+#                       question="描述图片")
 
-resp = llm.invoke(msg1)
-print("Raw response:", resp)
+# resp = llm.invoke(msg1)
+# print("Raw response:", resp)
 
