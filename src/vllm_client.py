@@ -64,32 +64,73 @@ q_store_closed = """
             5.如果图片上没有商店，输出{'closed': None}
             6.直接输出最终的结果Json，不要输出你的思考过程! 
             """
+            
+q_grouding_task = """
+            grounding task: pricetag, in normalized (0,1) coordinates
+            output the answer in json format.
+            Output the box ONLY.
+            """
+            
+q_box_task = """
+            描述: 图中<box>(207,225),(244,381)</box>区域，不要涉及到其他区域    
+        """
 
-url = "/datadrive/codes/frank/langchains/retrieval_anything/data/186/302951b264a7dee9979681740cf96a9a.jpg"
-img = cv2.imread(url)
-img = cv2.resize(img, (100, 50))
-img_b64 = base64.b64encode(cv2.imencode(".png", img)[1]).decode()
-img_b64 = f"data:image/png;base64,{img_b64}"
+"""
+OCR 图中<box>(356,1290),(653,1442)</box>的文本 5.8
+OCR 图中<box>(220,1191),(360,1442)</box>的文本 12.5
+"""
+q_box_price = """
+            输入一个Box区域：<box>(32,650),(331,878)</box>
+            1.OCR 得到区域文本内容
+            2.根据位置和文本内容，找到对应的价签，如果价签上的文本和商品不一致，则忽略
+            3.提取价签上的价格，可能会有一个或多个价格，输出最低价格
+            输出{'price': price_number, "product_full_text": product_full_text, "pricetag_full_text": pricetag_full_text}
+            如果没有找到价格，输出{'price': -1, "product_full_text": product_full_text, "pricetag_full_text": pricetag_full_text}
+            直接输出最终的结果Json，不要输出你的思考过程!
+            """
 
-for i in range(1):
-        chat_response = client.chat.completions.create(
-            model="Qwen/Qwen2.5-VL-7B-Instruct",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
+
+q_price_v3 = f"""
+            Box1: <box>(72,1190),(218,1437)</box>
+            Box2: <box>(356,1290),(653,1442)</box>
+            Box3: <box>(520,56),(996,243)</box>
+            Box4: <box>(86,5),(510,254)</box>
+            从价签中提取这商品对应的价格，综合考虑位置和文本相关性。
+            如果一个商品有多个价格，则选择最小的价格
+            如果没有找到价格，则价格输出-1！
+            '{{"box_id": box_id, "price": price}}'
+            只按顺序输出给定的商品的信息，不要输出其它内容。
+            """
+
+
+unit_url = "/datadrive/codes/frank/langchains/retrieval_anything/data/price/fe6bedaacb3e42c1683260b23669b194_resize.jpg"
+unit_img = cv2.imread(unit_url)
+# img = cv2.resize(unit_img, (1000, 2000))
+# cv2.imwrite(f"{unit_url[:-4]}_resize.jpg", unit_img) 
+unit_img_b64 = base64.b64encode(cv2.imencode(".png", unit_img)[1]).decode()
+unit_img_b64 = f"data:image/png;base64,{unit_img_b64}"
+
+chat_response = client.chat.completions.create(
+    model="Qwen/Qwen2.5-VL-7B-Instruct",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": [
                 {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": img_b64
-                            },
-                        },
-                        {"type": "text", "text": q_store_closed},
-                    ],
+                    "type": "image_url",
+                    "image_url": {
+                        "url": unit_img_b64
+                    },
+                },
+                {
+                    "type": "text", 
+                    "text": q_price_v3
                 },
             ],
-        )
+        },
+    ],
+)
         
 print("Raw response:", chat_response)
 resp = chat_response.choices[0].message.content
